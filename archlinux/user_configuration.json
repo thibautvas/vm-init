@@ -1,0 +1,133 @@
+{
+    "app_config": null,
+    "archinstall-language": "English",
+    "auth_config": {},
+    "bootloader": "Systemd-boot",
+    "custom_commands": [
+        "su - thibautvas -c 'curl -fsSL https://raw.githubusercontent.com/thibautvas/vm-init/refs/heads/main/setup.sh | bash'"
+    ],
+    "disk_config": {
+        "btrfs_options": {
+            "snapshot_config": null
+        },
+        "config_type": "default_layout",
+        "device_modifications": [
+            {
+                "device": "/dev/vda",
+                "partitions": [
+                    {
+                        "btrfs": [],
+                        "dev_path": null,
+                        "flags": [
+                            "boot",
+                            "esp"
+                        ],
+                        "fs_type": "fat32",
+                        "mount_options": [],
+                        "mountpoint": "/boot",
+                        "obj_id": "c5c8248d-3708-4730-b6cb-5eabf870f156",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "GiB",
+                            "value": 1
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "MiB",
+                            "value": 1
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    },
+                    {
+                        "btrfs": [],
+                        "dev_path": null,
+                        "flags": [],
+                        "fs_type": "ext4",
+                        "mount_options": [],
+                        "mountpoint": "/",
+                        "obj_id": "2e8f778b-e99d-42c5-9a2d-9b518649c8cb",
+                        "size": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "B",
+                            "value": 20398997504
+                        },
+                        "start": {
+                            "sector_size": {
+                                "unit": "B",
+                                "value": 512
+                            },
+                            "unit": "B",
+                            "value": 1074790400
+                        },
+                        "status": "create",
+                        "type": "primary"
+                    }
+                ],
+                "wipe": true
+            }
+        ]
+    },
+    "hostname": "archlinux",
+    "kernels": [
+        "linux"
+    ],
+    "locale_config": {
+        "kb_layout": "us",
+        "sys_enc": "UTF-8",
+        "sys_lang": "en_US.UTF-8"
+    },
+    "mirror_config": {
+        "custom_repositories": [],
+        "custom_servers": [],
+        "mirror_regions": {
+            "Spain": [
+                "https://ftp.rediris.es/mirror/archlinux/$repo/os/$arch",
+                "http://es.mirrors.cicku.me/archlinux/$repo/os/$arch",
+                "https://es.mirrors.cicku.me/archlinux/$repo/os/$arch",
+                "https://nox.panibrez.com/archlinux/$repo/os/$arch",
+                "http://mirror.raiolanetworks.com/archlinux/$repo/os/$arch",
+                "https://mirror.raiolanetworks.com/archlinux/$repo/os/$arch",
+                "http://mirror.es.cdn-perfprod.com/archlinux/$repo/os/$arch",
+                "https://mirror.es.cdn-perfprod.com/archlinux/$repo/os/$arch"
+            ]
+        },
+        "optional_repositories": []
+    },
+    "network_config": {
+        "type": "iso"
+    },
+    "ntp": true,
+    "packages": [
+        "git",
+        "less"
+    ],
+    "parallel_downloads": 0,
+    "profile_config": {
+        "gfx_driver": null,
+        "greeter": null,
+        "profile": {
+            "custom_settings": {
+                "sshd": {}
+            },
+            "details": [
+                "sshd"
+            ],
+            "main": "Server"
+        }
+    },
+    "script": null,
+    "services": [],
+    "swap": true,
+    "timezone": "Europe/Madrid",
+    "version": "3.0.11"
+}
