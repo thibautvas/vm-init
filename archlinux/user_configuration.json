@@ -4,7 +4,7 @@
     "auth_config": {},
     "bootloader": "Systemd-boot",
     "custom_commands": [
-        "su - thibautvas -c 'curl -fsSL https://raw.githubusercontent.com/thibautvas/vm-init/refs/heads/main/setup.sh | bash'"
+        "su - thibautvas -c 'curl -fsSL https://raw.githubusercontent.com/thibautvas/dotfiles/refs/heads/main/setup.sh | bash'"
     ],
     "disk_config": {
         "btrfs_options": {

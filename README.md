@@ -33,9 +33,8 @@ archinstall --config-url https://raw.githubusercontent.com/thibautvas/vm-init/re
 ├── archlinux
 │   ├── user_configuration.json
 │   └── user_credentials.json
-├── debian
-│   └── preseed.cfg
-└── setup.sh
+└── debian
+    └── preseed.cfg
 
-3 directories, 6 files
+3 directories, 5 files
 ```
