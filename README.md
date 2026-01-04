@@ -24,17 +24,25 @@ archinstall --config-url https://raw.githubusercontent.com/thibautvas/vm-init/re
             --silent
 ```
 
+### alpinelinux
+
+```bash
+setup-alpine -f https://raw.githubusercontent.com/thibautvas/vm-init/refs/heads/main/alpinelinux/setup-alpine.conf
+```
+
 ## Project structure
 
 ```text
 .
 ├── .gitignore
 ├── README.md
+├── alpinelinux
+│   └── setup-alpine.conf
 ├── archlinux
 │   ├── user_configuration.json
 │   └── user_credentials.json
 └── debian
     └── preseed.cfg
 
-3 directories, 5 files
+4 directories, 6 files
 ```
