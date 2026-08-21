@@ -1,6 +1,15 @@
 # vm-init
 
-## Distributions
+## VM install with nix
+
+Leverage [flake.nix](./flake.nix):
+
+```bash
+nix run github:thibautvas/vm-init#debian
+# resp. #alpinelinux #archlinux
+```
+
+## VM install without nix
 
 ### debian
 
@@ -35,6 +44,8 @@ curl -fsSL https://raw.githubusercontent.com/thibautvas/vm-init/main/archlinux/s
 setup-alpine -e -f https://raw.githubusercontent.com/thibautvas/vm-init/main/alpinelinux/setup-alpine.conf
 ```
 
-### nixos
 
-Seperate repo to avoid flake headaches: [nixos-vm](https://github.com/thibautvas/nixos-vm)
+## Impermanence
+
+Achievable using overlays and libvirtd hooks:
+[libvirtd-hooks.nix](https://github.com/thibautvas/nix-config/blob/fd60549fbdaee48fb5ed653db04b7a7b9028a467/machines/nixos/custom/libvirtd-hooks.nix)
