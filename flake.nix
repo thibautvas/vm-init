@@ -1,10 +1,33 @@
 {
   description = "vm-init";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs = {
+    # build nixos vm with nixpkgs rev that nix-config follows
+    # other distros don't make much use of nixpkgs, should be fine
+    nix-config.url = "github:thibautvas/nix-config";
+    nixpkgs.follows = "nix-config/nixpkgs";
+
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixos-anywhere = {
+      url = "github:nix-community/nixos-anywhere";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.disko.follows = "disko";
+    };
+  };
 
   outputs =
-    { self, nixpkgs }:
+    {
+      self,
+      nixpkgs,
+      nix-config,
+      disko,
+      nixos-anywhere,
+      ...
+    }:
 
     let
       inherit (nixpkgs) lib;
@@ -46,6 +69,7 @@
             virt-install \
               ${lib.concatStringsSep " \\\n  " flags}
           '';
+          passthru.vmName = name;
         };
 
       # debian: netboot installer driven by a preseed injected into the initrd
@@ -160,11 +184,93 @@
           ];
         };
 
+      # nixos: boot minimal iso and deploy with nixos-anywhere
+      nixos =
+        let
+          # authorized keys for easier handling of nixos-anywhere
+          authKey = user: {
+            users.users.${user}.openssh.authorizedKeys.keys = [ (builtins.readFile ./id_rsa.pub) ];
+          };
+
+          # minimal installer, authorized for root
+          nixosIso =
+            (lib.nixosSystem {
+              inherit system;
+              modules = [
+                (
+                  { modulesPath, ... }:
+                  {
+                    imports = [ (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix") ];
+                    services.openssh.enable = true;
+                  }
+                )
+                (authKey "root")
+              ];
+            }).config.system.build.isoImage;
+
+          nixosInstall = mkVm {
+            name = "nixos";
+            osinfo = "nixos-unknown";
+            disks = [
+              "size=20,boot.order=1"
+              "path=${nixosIso}/iso/${nixosIso.isoName},device=cdrom,readonly=on,boot.order=2"
+            ];
+            extraFlags = [ "--import" ];
+          };
+
+          # nixos-anywhere: deploy guest config and disko partitions
+          nixosDeploy =
+            let
+              guest = nix-config.nixosConfigurations.guest.extendModules {
+                modules = [
+                  (import ./nixos/disko.nix {
+                    inherit disko;
+                  })
+                  (authKey "thibautvas")
+                ];
+              };
+            in
+            pkgs.symlinkJoin {
+              name = "vm-nixos-deploy";
+              paths = [ nixos-anywhere.packages.${system}.default ];
+              nativeBuildInputs = [ pkgs.makeWrapper ];
+              postBuild = ''
+                wrapProgram $out/bin/nixos-anywhere \
+                  --add-flags "--store-paths ${guest.config.system.build.diskoScript} \
+                                             ${guest.config.system.build.toplevel}"
+              '';
+              meta.mainProgram = "nixos-anywhere";
+            };
+
+        in
+        # nixos: final stiching
+        pkgs.writeShellApplication {
+          name = "vm-nixos-full";
+          runtimeInputs = [
+            nixosInstall
+            nixosDeploy
+          ];
+          text = ''
+            vm-nixos
+            # scan for ip
+            until ip=$(virsh --connect qemu:///system --quiet domifaddr ${nixosInstall.vmName} |
+              awk '/ipv4/{print $4}' | cut -d/ -f1) && [ -n "$ip" ]; do
+              sleep 1
+            done
+            nixos-anywhere --target-host "root@$ip" "$@"
+          '';
+        };
+
     in
     {
       packages.${system} = {
-        default = alpinelinux;
-        inherit alpinelinux archlinux debian;
+        default = nixos;
+        inherit
+          alpinelinux
+          archlinux
+          debian
+          nixos
+          ;
       };
     };
 }

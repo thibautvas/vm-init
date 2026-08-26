@@ -6,7 +6,7 @@ Leverage [flake.nix](./flake.nix):
 
 ```bash
 nix run github:thibautvas/vm-init#debian
-# resp. #alpinelinux #archlinux
+# resp. #alpinelinux #archlinux #nixos
 ```
 
 ## VM install without nix
