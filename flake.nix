@@ -11,12 +11,6 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    nixos-anywhere = {
-      url = "github:nix-community/nixos-anywhere";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.disko.follows = "disko";
-    };
   };
 
   outputs =
@@ -25,8 +19,6 @@
       nixpkgs,
       nix-config,
       disko,
-      nixos-anywhere,
-      ...
     }:
 
     let
@@ -184,10 +176,10 @@
           ];
         };
 
-      # nixos: boot minimal iso and deploy with nixos-anywhere
+      # nixos: boot minimal iso and install with partitioning over ssh
       nixos =
         let
-          # authorized keys for easier handling of nixos-anywhere
+          # authorized keys for easier handling of the ssh deploy
           authKey = user: {
             users.users.${user}.openssh.authorizedKeys.keys = [ (builtins.readFile ./id_rsa.pub) ];
           };
@@ -218,46 +210,57 @@
             extraFlags = [ "--import" ];
           };
 
-          # nixos-anywhere: deploy guest config and disko partitions
-          nixosDeploy =
-            let
-              guest = nix-config.nixosConfigurations.guest.extendModules {
-                modules = [
-                  (import ./nixos/disko.nix {
-                    inherit disko;
-                  })
-                  (authKey "thibautvas")
-                ];
-              };
-            in
-            pkgs.symlinkJoin {
-              name = "vm-nixos-deploy";
-              paths = [ nixos-anywhere.packages.${system}.default ];
-              nativeBuildInputs = [ pkgs.makeWrapper ];
-              postBuild = ''
-                wrapProgram $out/bin/nixos-anywhere \
-                  --add-flags "--store-paths ${guest.config.system.build.diskoScript} \
-                                             ${guest.config.system.build.toplevel}"
-              '';
-              meta.mainProgram = "nixos-anywhere";
-            };
+          # guest config with disko partitions
+          guest = nix-config.nixosConfigurations.guest.extendModules {
+            modules = [
+              (import ./nixos/disko.nix {
+                inherit disko;
+              })
+              (authKey "thibautvas")
+            ];
+          };
+
+          inherit (guest.config.system.build) diskoScript toplevel;
+
+          # wrap ssh with loose checks to avoid noise
+          sshWrapper = pkgs.writeShellScriptBin "ssh" ''
+            exec ${pkgs.openssh}/bin/ssh \
+              -F /dev/null \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              -o LogLevel=ERROR \
+              "$@"
+          '';
 
         in
         # nixos: final stiching
         pkgs.writeShellApplication {
           name = "vm-nixos-full";
           runtimeInputs = [
+            sshWrapper
             nixosInstall
-            nixosDeploy
           ];
           text = ''
             vm-nixos
-            # scan for ip
+
             until ip=$(virsh --connect qemu:///system --quiet domifaddr ${nixosInstall.vmName} |
               awk '/ipv4/{print $4}' | cut -d/ -f1) && [ -n "$ip" ]; do
               sleep 1
             done
-            nixos-anywhere --target-host "root@$ip" "$@"
+            target="root@$ip"
+
+            until ssh "$target" true 2>/dev/null; do
+              sleep 1
+            done
+
+            nix copy --no-check-sigs --to "ssh://$target" ${diskoScript}
+            ssh "$target" ${diskoScript}
+
+            nix copy --no-check-sigs --to "ssh://$target?remote-store=local%3Froot=/mnt" ${toplevel}
+            ssh "$target" \
+              nixos-install --no-root-passwd --no-channel-copy --system ${toplevel}
+
+            ssh "$target" poweroff || true
           '';
         };
 
